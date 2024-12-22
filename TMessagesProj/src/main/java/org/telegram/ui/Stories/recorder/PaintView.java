@@ -192,6 +192,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
     private FrameLayout pipetteContainerLayout;
     private LinearLayout tabsLayout;
     private View textDim;
+    public boolean isStory = true;
 
     private int tabsSelectedIndex = 0;
     private int tabsNewSelectedIndex = -1;
@@ -266,7 +267,9 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
     private Runnable onDoneButtonClickedListener;
     private Runnable onCancelButtonClickedListener;
 
-    private StoryRecorder.WindowView parent;
+    //mycode
+    private ViewGroup parent;
+    private StoryRecorder.IWindowView windowView;
 
     private AnimatorSet keyboardAnimator;
     public final KeyboardNotifier keyboardNotifier;
@@ -298,7 +301,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    public PaintView(Context context, boolean fileFromGallery, File file, boolean isVideo, boolean isBot, StoryRecorder.WindowView parent, Activity activity, int currentAccount, Bitmap bitmap, Bitmap blurBitmap, Bitmap originalBitmap, int originalRotation, ArrayList<VideoEditedInfo.MediaEntity> entities, StoryEntry entry, int viewWidth, int viewHeight, MediaController.CropState cropState, Runnable onInit, BlurringShader.BlurManager blurManager, Theme.ResourcesProvider resourcesProvider, PreviewView.TextureViewHolder videoTextureHolder, PreviewView previewView) {
+    public PaintView(Context context, boolean fileFromGallery, File file, boolean isVideo, boolean isBot, ViewGroup parent, Activity activity, int currentAccount, Bitmap bitmap, Bitmap blurBitmap, Bitmap originalBitmap, int originalRotation, ArrayList<VideoEditedInfo.MediaEntity> entities, StoryEntry entry, int viewWidth, int viewHeight, MediaController.CropState cropState, Runnable onInit, BlurringShader.BlurManager blurManager, Theme.ResourcesProvider resourcesProvider, PreviewView.TextureViewHolder videoTextureHolder, PreviewView previewView) {
         super(context, activity, true);
         setDelegate(this);
         this.blurManager = blurManager;
@@ -308,6 +311,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
         this.isVideo = isVideo;
         this.isBot = isBot;
         this.parent = parent;
+        this.windowView = (StoryRecorder.IWindowView) parent;
         this.w = viewWidth;
         this.h = viewHeight;
         this.previewView = previewView;
@@ -1070,7 +1074,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
         }
 
         keyboardNotifier = new KeyboardNotifier(parent, keyboardHeight -> {
-            keyboardHeight = Math.max(keyboardHeight - parent.getBottomPadding2(), emojiPadding - parent.getPaddingUnderContainer());
+            keyboardHeight = Math.max(keyboardHeight - windowView.getBottomPadding2(), emojiPadding - windowView.getPaddingUnderContainer());
             keyboardHeight = Math.max(0, keyboardHeight);
 
             notifyHeightChanged();
@@ -1910,6 +1914,8 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
 
             @Override
             public boolean canClickWidget(Integer widgetId) {
+                if(!isStory)
+                    return true;
                 if (widgetId == EmojiBottomSheet.WIDGET_REACTION) {
                     int widgetsCount = 0;
                     for (int i = 0; i < entitiesView.getChildCount(); i++) {
@@ -1938,7 +1944,8 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
                 return PaintView.this.checkAudioPermission(granted);
             }
         };
-        alert.setBlurDelegate(parent::drawBlurBitmap);
+        alert.isStory = isStory;
+        alert.setBlurDelegate(windowView::drawBlurBitmap);
         boolean[] closing = new boolean[1];
         closing[0] = true;
         alert.setOnDismissListener(di -> {
@@ -1986,7 +1993,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
                 appearAnimation(reactionWidget);
                 return true;
             } else if (widgetId == EmojiBottomSheet.WIDGET_LINK) {
-                if (!UserConfig.getInstance(currentAccount).isPremium()) {
+                if (isStory && !UserConfig.getInstance(currentAccount).isPremium()) {
                     alert.container.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
                     BulletinFactory.of(alert.container, resourcesProvider).createSimpleBulletin(R.raw.star_premium_2,
                         AndroidUtilities.premiumText(getString(R.string.StoryLinkPremium), () -> {
@@ -2283,7 +2290,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
         measureChild(bottomLayout, widthMeasureSpec, heightMeasureSpec);
         measureChild(weightChooserView, widthMeasureSpec, heightMeasureSpec);
         measureChild(pipetteContainerLayout, widthMeasureSpec, heightMeasureSpec);
-        int keyboardPad = Math.max(emojiPadding - parent.getPaddingUnderContainer(), measureKeyboardHeight());
+        int keyboardPad = Math.max(emojiPadding - windowView.getPaddingUnderContainer(), measureKeyboardHeight());
         measureChild(overlayLayout, widthMeasureSpec, MeasureSpec.makeMeasureSpec(height - keyboardPad, MeasureSpec.EXACTLY));
 
         topLayout.setPadding(topLayout.getPaddingLeft(), dp(12), topLayout.getPaddingRight(), topLayout.getPaddingBottom());
@@ -4904,7 +4911,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
                     keyboardHeightLand = MessagesController.getGlobalEmojiSettings().getInt("kbd_height_land3", dp(200));
                 }
             }
-            int currentHeight = (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y ? keyboardHeightLand : keyboardHeight) + parent.getPaddingUnderContainer();
+            int currentHeight = (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y ? keyboardHeightLand : keyboardHeight) + windowView.getPaddingUnderContainer();
 
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) currentView.getLayoutParams();
             layoutParams.height = currentHeight;
@@ -5014,7 +5021,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
 
     @Override
     public int measureKeyboardHeight() {
-        return keyboardNotifier.getKeyboardHeight() - parent.getBottomPadding2();
+        return keyboardNotifier.getKeyboardHeight() - windowView.getBottomPadding2();
     }
 
     @Override
@@ -5030,7 +5037,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
         }
 
         if (emojiViewVisible) {
-            int newHeight = (isWidthGreater ? keyboardHeightLand : keyboardHeight) + parent.getPaddingUnderContainer();
+            int newHeight = (isWidthGreater ? keyboardHeightLand : keyboardHeight) + windowView.getPaddingUnderContainer();
 
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) emojiView.getLayoutParams();
             if (layoutParams.width != AndroidUtilities.displaySize.x || layoutParams.height != newHeight) {

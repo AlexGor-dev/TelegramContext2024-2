@@ -52,6 +52,7 @@ public class VideoEditedInfo {
     public long estimatedDuration;
     public boolean roundVideo;
     public boolean muted;
+    public boolean notGif;
     public float volume = 1f;
     public long originalDuration;
     public TLRPC.InputFile file;

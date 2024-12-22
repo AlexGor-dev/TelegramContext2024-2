@@ -252,6 +252,13 @@ public class DownloadButton extends ImageView {
         }
     }
 
+    public void setDownloading(boolean downloading)
+    {
+        if(this.downloading == downloading) return;
+        this.downloading = downloading;
+        this.updateImage();
+    }
+
     public void showToast(int resId, CharSequence text) {
         if (toast != null) {
             toast.hide();

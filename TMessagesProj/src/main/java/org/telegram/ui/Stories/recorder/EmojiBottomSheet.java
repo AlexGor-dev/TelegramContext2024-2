@@ -1520,7 +1520,7 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
     private float maxPadding = -1;
     private final boolean onlyStickers;
     private final boolean greeting;
-
+    public boolean isStory = true;
 //    private final GestureDetector gestureDetector;
     private boolean wasKeyboardVisible;
 
@@ -1531,6 +1531,7 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
 
         this.onlyStickers = onlyStickers;
         this.greeting = greeting;
+        this.isStory = isStory;
 
         useSmoothKeyboard = true;
         fixNavigationBar(Theme.getColor(Theme.key_dialogBackground, resourcesProvider));
@@ -2884,7 +2885,12 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
             super(context);
             setPadding(0, 0, 0, 0);
             if (canShowWidget(WIDGET_LINK))
-                widgets.add(new Button(WIDGET_LINK, R.drawable.msg_limit_links, LocaleController.getString(R.string.StoryWidgetLink)).needsPremium());
+            {
+                Button button = new Button(WIDGET_LINK, R.drawable.msg_limit_links, LocaleController.getString(R.string.StoryWidgetLink));
+                if(isStory)
+                    button.needsPremium();
+                widgets.add(button);
+            }
             if (canShowWidget(WIDGET_LOCATION))
                 widgets.add(new Button(WIDGET_LOCATION, R.drawable.map_pin3, LocaleController.getString(R.string.StoryWidgetLocation)));
             if (canShowWidget(WIDGET_WEATHER)) {

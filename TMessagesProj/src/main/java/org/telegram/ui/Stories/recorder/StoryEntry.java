@@ -178,14 +178,20 @@ public class StoryEntry {
     private boolean fromCamera;
 
     public boolean wouldBeVideo() {
-        return wouldBeVideo(mediaEntities);
+        return wouldBeVideo(mediaEntities, false);
+    }
+    public boolean wouldBeVideo(boolean notAudio) {
+        return wouldBeVideo(mediaEntities, notAudio);
+    }
+    public boolean wouldBeVideo(ArrayList<VideoEditedInfo.MediaEntity> mediaEntities){
+        return wouldBeVideo(mediaEntities, false);
     }
 
-    public boolean wouldBeVideo(ArrayList<VideoEditedInfo.MediaEntity> mediaEntities) {
+    public boolean wouldBeVideo(ArrayList<VideoEditedInfo.MediaEntity> mediaEntities, boolean notAudio) {
         if (isVideo) {
             return true;
         }
-        if (audioPath != null) {
+        if (!notAudio && audioPath != null) {
             return true;
         }
         if (round != null) {
@@ -1080,6 +1086,7 @@ public class StoryEntry {
                 info.estimatedSize = (long) (duration / 1000.0f * encoderBitrate / 8);
                 info.filterState = null;
             }
+
             info.account = currentAccount;
             info.wallpaperPeerId = backgroundWallpaperPeerId;
             info.isDark = isDark;

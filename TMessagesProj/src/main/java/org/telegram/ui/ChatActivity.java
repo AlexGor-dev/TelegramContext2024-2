@@ -2144,13 +2144,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             checkInstantCameraView();
             if (instantCameraView != null) {
                 if (state == 0) {
-                    instantCameraView.showCamera(false);
+                    //mycode
+                    StoryRecorder.getInstance(getParentActivity(), currentAccount).open(null, true, false);
+//                    CameraRecorder2.getInstance(getParentActivity(), currentAccount).open(null, ChatActivity.this, true);
+//                    instantCameraView.showCamera(false);
                     chatListView.stopScroll();
                     chatAdapter.updateRowsSafe();
-                } else if (state == 1 || state == 3 || state == 4) {
-                    instantCameraView.send(state, notify, scheduleDate, ttl, effectId);
-                } else if (state == 2 || state == 5) {
-                    instantCameraView.cancel(state == 2);
+//                } else if (state == 1 || state == 3 || state == 4) {
+//                    instantCameraView.send(state, notify, scheduleDate, ttl, effectId);
+//                } else if (state == 2 || state == 5) {
+//                    instantCameraView.cancel(state == 2);
                 }
             }
         }

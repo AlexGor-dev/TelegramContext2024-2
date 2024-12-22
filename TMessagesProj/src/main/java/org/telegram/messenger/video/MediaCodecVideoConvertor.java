@@ -428,8 +428,8 @@ public class MediaCodecVideoConvertor {
                                 extractor.seekTo(0, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
                             }
 
-                            int w;
-                            int h;
+                            int w = 0;
+                            int h = 0;
                             if (cropState != null && cropState.useMatrix == null) {
                                 if (rotationValue == 90 || rotationValue == 270) {
                                     w = cropState.transformHeight;
@@ -438,9 +438,16 @@ public class MediaCodecVideoConvertor {
                                     w = cropState.transformWidth;
                                     h = cropState.transformHeight;
                                 }
-                            } else {
-                                w = resultWidth;
-                                h = resultHeight;
+                            }
+                            if(w == 0 || h == 0)
+                            {
+                                if (rotationValue == 90 || rotationValue == 270) {
+                                    w = resultHeight;
+                                    h = resultWidth;
+                                } else {
+                                    w = resultWidth;
+                                    h = resultHeight;
+                                }
                             }
 
                             if (encoderName != null) {

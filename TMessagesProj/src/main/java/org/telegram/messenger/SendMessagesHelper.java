@@ -1121,29 +1121,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 return;
             }
             String finalPath = (String) args[1];
-
-            ArrayList<DelayedMessage> arr = delayedMessages.get(messageObject.messageOwner.attachPath);
-            if (arr != null) {
-                for (int a = 0; a < arr.size(); a++) {
-                    DelayedMessage message = arr.get(a);
-                    if (message.type == 4) {
-                        int index = message.messageObjects.indexOf(messageObject);
-                        message.photoSize = (TLRPC.PhotoSize) message.extraHashMap.get(messageObject.messageOwner.attachPath + "_t");
-                        message.performMediaUpload = true;
-                        performSendDelayedMessage(message, index);
-                        arr.remove(a);
-                        break;
-                    } else if (message.obj == messageObject) {
-                        message.videoEditedInfo = null;
-                        performSendDelayedMessage(message);
-                        arr.remove(a);
-                        break;
-                    }
-                }
-                if (arr.isEmpty()) {
-                    delayedMessages.remove(messageObject.messageOwner.attachPath);
-                }
-            }
+            performSendDelayedMessage(messageObject);
         } else if (id == NotificationCenter.fileNewChunkAvailable) {
             MessageObject messageObject = (MessageObject) args[0];
             if (messageObject.getId() == 0) {
@@ -4252,7 +4230,13 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             if (newMsgObj.videoEditedInfo != null && videoEditedInfo == null) {
                 videoEditedInfo = newMsgObj.videoEditedInfo;
             } else if (videoEditedInfo != null && videoEditedInfo.notReadyYet) {
-                newMsgObj.videoEditedInfo.notReadyYet = videoEditedInfo.notReadyYet;
+
+                if(videoEditedInfo.notReadyYet)
+                    newMsgObj.videoEditedInfo.notReadyYet = videoEditedInfo.notReadyYet;
+                //mycode
+                newMsgObj.videoEditedInfo.muted = videoEditedInfo.muted;
+                if(!videoEditedInfo.muted)
+                    newMsgObj.videoEditedInfo.mixedSoundInfos = videoEditedInfo.mixedSoundInfos;
             }
 
             if (groupId == 0) {
@@ -4512,6 +4496,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         uploadedDocument.mime_type = document.mime_type;
                         uploadedDocument.attributes = document.attributes;
                         uploadedDocument.spoiler = hasMediaSpoilers;
+                        if(videoEditedInfo != null && videoEditedInfo.muted && videoEditedInfo.notGif)
+                            uploadedDocument.nosound_video = true;
                         if (forceNoSoundVideo || !MessageObject.isRoundVideoDocument(document) && (videoEditedInfo == null || !videoEditedInfo.muted && !videoEditedInfo.roundVideo)) {
                             uploadedDocument.nosound_video = true;
                             if (BuildVars.DEBUG_VERSION) {
@@ -5271,6 +5257,32 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
             getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, newMsg.id);
             processSentMessage(newMsg.id);
+        }
+    }
+
+    public void performSendDelayedMessage(MessageObject messageObject)
+    {
+        ArrayList<DelayedMessage> arr = delayedMessages.get(messageObject.messageOwner.attachPath);
+        if (arr != null) {
+            for (int a = 0; a < arr.size(); a++) {
+                DelayedMessage message = arr.get(a);
+                if (message.type == 4) {
+                    int index = message.messageObjects.indexOf(messageObject);
+                    message.photoSize = (TLRPC.PhotoSize) message.extraHashMap.get(messageObject.messageOwner.attachPath + "_t");
+                    message.performMediaUpload = true;
+                    performSendDelayedMessage(message, index);
+                    arr.remove(a);
+                    break;
+                } else if (message.obj == messageObject) {
+                    message.videoEditedInfo = null;
+                    performSendDelayedMessage(message);
+                    arr.remove(a);
+                    break;
+                }
+            }
+            if (arr.isEmpty()) {
+                delayedMessages.remove(messageObject.messageOwner.attachPath);
+            }
         }
     }
 
@@ -9518,7 +9530,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         attributeVideo.duration = videoEditedInfo.estimatedDuration / 1000.0;
                         document.size = videoEditedInfo.estimatedSize;
                     } else if (videoEditedInfo != null && videoEditedInfo.needConvert()) {
-                        if (videoEditedInfo.muted) {
+                        if (videoEditedInfo.muted && !videoEditedInfo.notGif) {
                             document.attributes.add(new TLRPC.TL_documentAttributeAnimated());
                             fillVideoAttribute(videoPath, attributeVideo, videoEditedInfo);
                             videoEditedInfo.originalWidth = attributeVideo.w;
